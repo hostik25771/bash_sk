@@ -42,7 +42,7 @@ if [ -z "$DB_NAME" ]; then
        if [ -f "${DB_NAME}_${CURRENT_DATE}.sql" ]; then
 # Архівуємо SQL файл та файли сайту
 chown $OWNER: ${DB_NAME}_${CURRENT_DATE}.sql
-       tar -cvzf "backup_${CURRENT_DATE}.tar.gz" "${DB_NAME}_${CURRENT_DATE}.sql" ./*
+      tar --exclude="wp_archive.sh"  -cvzf "backup_${CURRENT_DATE}.tar.gz" "${DB_NAME}_${CURRENT_DATE}.sql" ./*
 # Змінюємо права на архів на власника
        chown $OWNER: "backup_${CURRENT_DATE}.tar.gz"
 # Видаляємо оригінальний SQL файл, щоб залишити тільки архів
