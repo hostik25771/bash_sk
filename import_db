@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Шлях до директорії з дампами баз даних
+dump_dir="/home/dump_db"
+
+# Перевіряємо, чи існує директорія з дампами
+if [ ! -d "$dump_dir" ]; then
+    echo "Directory $dump_dir does not exist"
+    exit 1
+fi
+
+# Змінюємо робочу директорію на директорію з дампами
+cd "$dump_dir" || exit 1
+
+# Отримуємо список усіх файлів дампів баз даних
+dump_files=$(ls *.sql)
+
+# Проходимося по кожному файлу дампу
+for dump_file in $dump_files
+do
+    # Витягуємо назву бази даних з імені файлу дампу
+    db_name=$(echo "$dump_file" | awk -F '_cp.sql' '{print $1}')
+    
+    # Перевіряємо, чи змінна db_name не є пустою
+    if [ -n "$db_name" ]; then
+        echo "Importing database $db_name from $dump_file"
+        
+        # Виконуємо команду для зчитування дампу бази даних у MySQL
+        mysql "$db_name" < "$dump_file"
+        
+        # Перевіряємо результат виконання команди MySQL
+        if [ $? -eq 0 ]; then
+            echo "Import for $db_name completed successfully"
+        else
+            echo "Import for $db_name failed"
+        fi
+    else
+        echo "Unable to extract database name from dump file: $dump_file"
+    fi
+    
+    echo ""
+done
