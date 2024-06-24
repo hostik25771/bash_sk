@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Отримуємо список користувачів cPanel
+users=$(whmapi1 listaccts | grep user | awk '{print $2}')
+
+# Проходимося по кожному користувачу
+for user in $users
+do
+    echo "Processing user: $user"
+    
+    # Знаходимо конфігураційний файл wp-config.php для кожного користувача
+    wp_config="/home/$user/public_html/wp-config.php"
+    
+    if [ -f "$wp_config" ]; then
+        echo "Found wp-config.php for user $user"
+        
+        # Отримуємо назву бази даних з wp-config.php
+        db_name=$(grep -i 'DB_NAME' "$wp_config" | awk -F "'" '{print $4}')
+        
+        if [ -n "$db_name" ]; then
+            echo "Database name for user $user: $db_name"
+            cd /home/mysql_dump
+
+            # Робимо дамп бази даних
+            mysqldump $db_name > "${user}_${db_name}_cp.sql"
+            
+            if [ $? -eq 0 ]; then
+                echo "Dump for $db_name completed successfully"
+            else
+                echo "Dump for $db_name failed"
+            fi
+        else
+            echo "DB_NAME not found in $wp_config for user $user"
+        fi
+        
+        # Пошук і обробка піддоменів
+        subdomains=$(grep -i 'SUBDOMAINS' "$wp_config" | awk -F "'" '{print $4}')
+        
+        if [ -n "$subdomains" ]; then
+            echo "Subdomains for user $user: $subdomains"
+            # Додаткова логіка для обробки піддоменів
+            # Наприклад, міграція або копіювання піддоменів
+        else
+            echo "No subdomains found in $wp_config for user $user"
+        fi
+        
+    else
+        echo "wp-config.php not found for user $user"
+    fi
+    
+    echo ""
+done
+
